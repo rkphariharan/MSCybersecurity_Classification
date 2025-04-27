@@ -1,0 +1,29 @@
+from sklearn.model_selection import train_test_split
+import pandas as pd
+# Load preprocessed dataset
+df = pd.read_csv(r"C:\Users\rkpha\Desktop\MS Cybersecurity\trainpreprocessed.csv")
+
+# Features and Target
+X = df.drop(columns=['IncidentGrade'])  # All features except target
+y = df['IncidentGrade']  # Target variable
+
+# Stratified 80-20 Train-Validation Split
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y,
+    test_size=0.2,
+    stratify=y,
+    random_state=42
+)
+# Save training set
+train_df = pd.concat([X_train, y_train], axis=1)
+train_df.to_csv(r"C:\Users\rkpha\Desktop\MS Cybersecurity\train_split.csv", index=False)
+
+# Save validation set
+val_df = pd.concat([X_val, y_val], axis=1)
+val_df.to_csv(r"C:\Users\rkpha\Desktop\MS Cybersecurity\val_split.csv", index=False)
+
+print("✅ Train and Validation splits saved successfully!")
+
+print("✅ Data split completed:")
+print(f"Train Set Shape: {X_train.shape}, {y_train.shape}")
+print(f"Validation Set Shape: {X_val.shape}, {y_val.shape}")
