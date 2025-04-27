@@ -1,0 +1,66 @@
+# Import libraries
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
+from sklearn.metrics import classification_report, f1_score
+
+# Set paths
+train_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\train_split.csv"
+val_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\val_split.csv"
+
+# Load datasets
+train_df = pd.read_csv(train_path)
+val_df = pd.read_csv(val_path)
+
+# Separate features and target
+X_train = train_df.drop(columns=['IncidentGrade'])
+y_train = train_df['IncidentGrade']
+X_val = val_df.drop(columns=['IncidentGrade'])
+y_val = val_df['IncidentGrade']
+
+# Store model performances
+model_performance = {}
+
+# ============================
+# 1. Random Forest Classifier
+# ============================
+print("\n🚀 Training Random Forest Classifier...")
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
+y_pred_rf = rf_model.predict(X_val)
+
+print("\n📋 Random Forest Evaluation:")
+print(classification_report(y_val, y_pred_rf, digits=4))
+model_performance['Random Forest'] = f1_score(y_val, y_pred_rf, average='macro')
+
+# ============================
+# 2. XGBoost Classifier
+# ============================
+print("\n🚀 Training XGBoost Classifier...")
+xgb_model = XGBClassifier(use_label_encoder=False, eval_metric='mlogloss', random_state=42)
+xgb_model.fit(X_train, y_train)
+y_pred_xgb = xgb_model.predict(X_val)
+
+print("\n📋 XGBoost Evaluation:")
+print(classification_report(y_val, y_pred_xgb, digits=4))
+model_performance['XGBoost'] = f1_score(y_val, y_pred_xgb, average='macro')
+
+# ============================
+# 3. LightGBM Classifier
+# ============================
+print("\n🚀 Training LightGBM Classifier...")
+lgbm_model = LGBMClassifier(random_state=42)
+lgbm_model.fit(X_train, y_train)
+y_pred_lgbm = lgbm_model.predict(X_val)
+
+print("\n📋 LightGBM Evaluation:")
+print(classification_report(y_val, y_pred_lgbm, digits=4))
+model_performance['LightGBM'] = f1_score(y_val, y_pred_lgbm, average='macro')
+
+# ============================
+# 4. Final Model Performance Summary
+# ============================
+print("\n🏁 Model Performance Comparison (Macro-F1 Scores):")
+for model, score in model_performance.items():
+    print(f"{model}: {score:.4f}")
