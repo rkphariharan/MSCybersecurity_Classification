@@ -1,0 +1,54 @@
+import matplotlib.pyplot as plt
+import xgboost as xgb
+import pickle
+import pandas as pd
+import os
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+# Paths
+model_path = r'C:\Users\rkpha\Desktop\MS Cybersecurity\final\best_xgb_model.pkl'
+save_folder = r'C:\Users\rkpha\Desktop\MS Cybersecurity\final'
+test_path = r'C:\Users\rkpha\Desktop\MS Cybersecurity\final\testpreprocessed.csv'
+
+# Create save folder if it doesn't exist
+os.makedirs(save_folder, exist_ok=True)
+
+# Load best model
+with open(model_path, 'rb') as file:
+    best_model = pickle.load(file)
+
+# Load test data
+test_data = pd.read_csv(test_path)
+
+# Drop unwanted columns if they exist
+for unwanted in ['Usage', 'IncidentGrade', 'Triage']:
+    if unwanted in test_data.columns:
+        print(f"⚠️ '{unwanted}' column detected! Dropping it.")
+        test_data = test_data.drop(unwanted, axis=1)
+
+X_test = test_data.copy()
+
+# Predict on test set
+y_pred_test = best_model.predict(X_test)
+
+# Feature Importance Plot
+plt.figure(figsize=(12, 8))
+xgb.plot_importance(best_model, max_num_features=20, importance_type='gain')
+plt.title('Top 20 Important Features')
+feature_plot_path = os.path.join(save_folder, 'feature_importance_plot.png')
+plt.savefig(feature_plot_path)
+plt.show()
+print(f"✅ Feature Importance plot saved at: {feature_plot_path}")
+
+print("ℹ️ Confusion Matrix cannot be plotted because the test set has no true labels.")
+
+
+
+output:
+C:\Users\rkpha\PycharmProjects\PythonProject\.venv\Scripts\python.exe C:\Users\rkpha\PycharmProjects\PythonProject\mscs.py 
+⚠️ 'Usage' column detected! Dropping it.
+⚠️ 'IncidentGrade' column detected! Dropping it.
+✅ Feature Importance plot saved at: C:\Users\rkpha\Desktop\MS Cybersecurity\final\feature_importance_plot.png
+ℹ️ Confusion Matrix cannot be plotted because the test set has no true labels.
+
+Process finished with exit code 0
