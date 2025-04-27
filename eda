@@ -1,0 +1,93 @@
+# Import libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+# Set file paths
+file_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\new_train_sample\train.xlsx"  # <-- Your Excel file
+save_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\eda"  # <-- Folder to save EDA plots
+
+# Create the EDA folder if it doesn't exist
+os.makedirs(save_path, exist_ok=True)
+
+# Load the Excel dataset
+df = pd.read_excel(file_path)
+
+# Drop 'Unnamed: 0' if exists
+if 'Unnamed: 0' in df.columns:
+    df.drop(columns=['Unnamed: 0'], inplace=True)
+
+# 1. Target Variable Distribution
+plt.figure(figsize=(6,4))
+sns.countplot(x='IncidentGrade', data=df)
+plt.title('IncidentGrade Distribution')
+plt.xlabel('Triage Label')
+plt.ylabel('Count')
+plt.savefig(os.path.join(save_path, 'incident_grade_distribution.png'))
+plt.close()
+
+# 2. Missing Values Heatmap
+plt.figure(figsize=(14,6))
+sns.heatmap(df.isnull(), cbar=False, cmap='viridis')
+plt.title('Missing Values Heatmap')
+plt.savefig(os.path.join(save_path, 'missing_values_heatmap.png'))
+plt.close()
+
+# 3. Numerical Features Distribution
+numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
+df[numeric_cols].hist(figsize=(20,20), bins=50)
+plt.suptitle('Numerical Features Distribution')
+plt.savefig(os.path.join(save_path, 'numerical_features_distribution.png'))
+plt.close()
+
+# 4. Categorical Feature Value Counts (only if manageable unique values)
+categorical_cols = df.select_dtypes(include=['object']).columns
+for col in categorical_cols:
+    if df[col].nunique() <= 20:
+        plt.figure(figsize=(8,4))
+        sns.countplot(y=col, data=df, order=df[col].value_counts().index)
+        plt.title(f'Value Counts of {col}')
+        filename = f'value_counts_{col}.png'
+        plt.savefig(os.path.join(save_path, filename))
+        plt.close()
+
+# 5. Correlation Heatmap for Numerical Features
+plt.figure(figsize=(12,10))
+sns.heatmap(df[numeric_cols].corr(), cmap='coolwarm', annot=False)
+plt.title('Correlation Matrix - Numerical Features')
+plt.savefig(os.path.join(save_path, 'correlation_matrix.png'))
+plt.close()
+
+# 6. Parse Timestamp and Create New Features
+if 'Timestamp' in df.columns:
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+    df['Hour'] = df['Timestamp'].dt.hour
+    df['Day'] = df['Timestamp'].dt.day
+    df['Month'] = df['Timestamp'].dt.month
+
+    # Plot Hour distribution
+    plt.figure(figsize=(8,4))
+    sns.countplot(x='Hour', data=df)
+    plt.title('Distribution of Incidents by Hour')
+    plt.xlabel('Hour of the Day')
+    plt.savefig(os.path.join(save_path, 'distribution_by_hour.png'))
+    plt.close()
+
+    # Plot Day distribution
+    plt.figure(figsize=(8,4))
+    sns.countplot(x='Day', data=df)
+    plt.title('Distribution of Incidents by Day')
+    plt.xlabel('Day of the Month')
+    plt.savefig(os.path.join(save_path, 'distribution_by_day.png'))
+    plt.close()
+
+    # Plot Month distribution
+    plt.figure(figsize=(8,4))
+    sns.countplot(x='Month', data=df)
+    plt.title('Distribution of Incidents by Month')
+    plt.xlabel('Month')
+    plt.savefig(os.path.join(save_path, 'distribution_by_month.png'))
+    plt.close()
+
+print("✅ EDA Completed and all plots are saved at:", save_path)
