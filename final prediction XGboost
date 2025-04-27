@@ -1,0 +1,55 @@
+import pandas as pd
+import pickle
+from sklearn.metrics import classification_report, f1_score
+
+# ----------------------------
+# Load preprocessed test data
+# ----------------------------
+test_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\testpreprocessed.csv"
+test_df = pd.read_csv(test_path)
+
+# ----------------------------
+# Drop any unexpected columns
+# ----------------------------
+if 'Usage' in test_df.columns:
+    print("⚠️ 'Usage' column detected! Dropping it to match training features.")
+    test_df = test_df.drop(columns=['Usage'])
+
+# ----------------------------
+# Separate features and labels
+# ----------------------------
+X_test = test_df.drop('IncidentGrade', axis=1)
+y_test = test_df['IncidentGrade']
+
+# ----------------------------
+# Load the saved best model
+# ----------------------------
+model_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\best_xgb_model.pkl"
+with open(model_path, 'rb') as file:
+    best_model = pickle.load(file)
+
+print("✅ Best model loaded successfully.")
+
+# ----------------------------
+# Make Predictions on Test Data
+# ----------------------------
+y_pred_test = best_model.predict(X_test)
+
+# ----------------------------
+# Evaluate Performance
+# ----------------------------
+print("\n📋 Final XGBoost Evaluation Report on Test Set:")
+print(classification_report(y_test, y_pred_test, digits=4))
+
+macro_f1 = f1_score(y_test, y_pred_test, average='macro')
+print(f"\n🎯 Final Macro-F1 Score on Test Set: {macro_f1:.4f}")
+
+output:
+
+Item	Details
+Best Model Used	XGBoost (fine-tuned with cross-validation)
+Test Data Size	473,435 samples
+Classes Detected	0, 1, 2 (Class 3 had no true samples in the test set)
+Final Accuracy	83.82%
+Final Weighted Avg F1-Score	83.59%
+Final Macro F1-Score	61.79%
