@@ -1,0 +1,54 @@
+# Import libraries
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
+from sklearn.preprocessing import LabelEncoder
+
+# Set paths
+train_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\train_split.csv"
+val_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\val_split.csv"
+
+# Load datasets
+train_df = pd.read_csv(train_path)
+val_df = pd.read_csv(val_path)
+
+# Separate features and target
+X_train = train_df.drop(columns=['IncidentGrade'])
+y_train = train_df['IncidentGrade']
+
+X_val = val_df.drop(columns=['IncidentGrade'])
+y_val = val_df['IncidentGrade']
+
+# ============================
+# 1. Logistic Regression Model
+# ============================
+print("\n🚀 Training Logistic Regression Model...")
+
+log_reg = LogisticRegression(max_iter=1000, random_state=42)
+log_reg.fit(X_train, y_train)
+
+# Predictions
+y_pred_logreg = log_reg.predict(X_val)
+
+# Evaluation
+print("\n📋 Logistic Regression Evaluation:")
+print(classification_report(y_val, y_pred_logreg, digits=4))
+print("Macro-F1 Score:", f1_score(y_val, y_pred_logreg, average='macro'))
+
+# ============================
+# 2. Decision Tree Classifier
+# ============================
+print("\n🚀 Training Decision Tree Classifier...")
+
+dtree = DecisionTreeClassifier(random_state=42)
+dtree.fit(X_train, y_train)
+
+# Predictions
+y_pred_dtree = dtree.predict(X_val)
+
+# Evaluation
+print("\n📋 Decision Tree Evaluation:")
+print(classification_report(y_val, y_pred_dtree, digits=4))
+print("Macro-F1 Score:", f1_score(y_val, y_pred_dtree, average='macro'))
+
