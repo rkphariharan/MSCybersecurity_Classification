@@ -1,0 +1,71 @@
+# Import libraries
+import pandas as pd
+import numpy as np
+import os
+from sklearn.preprocessing import LabelEncoder
+
+# Set file paths
+input_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\new_train_sample\train.xlsx"
+output_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\train_preprocessed_final.csv"
+
+# Load dataset
+df = pd.read_excel(input_path)
+
+# Drop 'Unnamed: 0' if it exists
+if 'Unnamed: 0' in df.columns:
+    df.drop(columns=['Unnamed: 0'], inplace=True)
+
+# ========== Step 1: Drop unwanted columns ==========
+drop_cols = [
+    'Id', 'IncidentId', 'AlertId', 'DeviceId', 'Sha256', 'IpAddress', 'Url',
+    'AccountSid', 'AccountUpn', 'AccountObjectId', 'AccountName', 'DeviceName',
+    'NetworkMessageId', 'EmailClusterId', 'RegistryKey', 'RegistryValueName',
+    'RegistryValueData', 'ApplicationId', 'OAuthApplicationId', 'FileName',
+    'FolderPath', 'ResourceIdName', 'ActionGrouped', 'ActionGranular', 'ThreatFamily'
+]
+df.drop(columns=drop_cols, inplace=True, errors='ignore')
+
+# ========== Step 2: Handle missing values ==========
+
+# Fill MitreTechniques missing values
+if 'MitreTechniques' in df.columns:
+    df['MitreTechniques'] = df['MitreTechniques'].fillna('Unknown')
+
+# Clean LastVerdict (remove invalid entries)
+if 'LastVerdict' in df.columns:
+    valid_verdicts = ['Suspicious', 'Malicious', 'ThreatsFound']
+    df['LastVerdict'] = df['LastVerdict'].apply(lambda x: x if x in valid_verdicts else 'Unknown')
+
+# Fill remaining object type missing values
+object_cols = df.select_dtypes(include=['object']).columns
+df[object_cols] = df[object_cols].fillna('Unknown')
+
+# ========== Step 3: Timestamp Parsing and Feature Engineering ==========
+if 'Timestamp' in df.columns:
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+    df['Hour'] = df['Timestamp'].dt.hour
+    df['Day'] = df['Timestamp'].dt.day
+    df['Month'] = df['Timestamp'].dt.month
+    df.drop(columns=['Timestamp'], inplace=True)  # Drop original Timestamp after extraction
+
+# ========== Step 4: Group Rare Categories ==========
+for col in ['ResourceType', 'Category', 'Roles']:
+    if col in df.columns:
+        freq = df[col].value_counts()
+        rare_labels = freq[freq < 100].index  # Rare if less than 100 examples
+        df[col] = df[col].apply(lambda x: 'Other' if x in rare_labels else x)
+
+# ========== Step 5: Label Encoding for Categorical Columns ==========
+categorical_cols = df.select_dtypes(include=['object']).columns
+
+le = LabelEncoder()
+for col in categorical_cols:
+    df[col] = le.fit_transform(df[col].astype(str))
+
+# ========== Step 6: Remove duplicate rows ==========
+df.drop_duplicates(inplace=True)
+
+# ========== Step 7: Save the clean dataset ==========
+df.to_csv(output_path, index=False)
+
+print(f"✅ Preprocessing Completed Successfully! Saved at: {output_path}")
