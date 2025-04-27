@@ -1,0 +1,58 @@
+# Import libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the Excel dataset
+df = pd.read_excel(r"C:\Users\rkpha\Desktop\MS Cybersecurity\new_train_sample\train.xlsx")  # <<== Change to your correct path
+
+# Drop 'Unnamed: 0' if it's not needed
+if 'Unnamed: 0' in df.columns:
+    df.drop(columns=['Unnamed: 0'], inplace=True)
+
+# View basic information
+print("Shape of Dataset:", df.shape)
+print("\nColumn Names:\n", df.columns.tolist())
+print("\nData Types:\n", df.dtypes)
+
+# View first few rows
+print("\nSample Data:\n", df.head())
+
+# Check missing values
+print("\nMissing Values:\n", df.isnull().sum())
+
+# Check duplicate rows
+print("\nDuplicate Rows:", df.duplicated().sum())
+
+# Check the distribution of the target variable (IncidentGrade)
+print("\nTarget Variable Distribution (IncidentGrade):\n", df['IncidentGrade'].value_counts(normalize=True) * 100)
+
+# Plot IncidentGrade distribution
+plt.figure(figsize=(6,4))
+sns.countplot(x='IncidentGrade', data=df)
+plt.title('IncidentGrade Distribution')
+plt.xlabel('Triage Label')
+plt.ylabel('Count')
+plt.show()
+
+# Check unique values in categorical columns
+print("\nUnique value counts for categorical columns:")
+categorical_cols = df.select_dtypes(include=['object']).columns
+for col in categorical_cols:
+    print(f"{col}: {df[col].nunique()} unique values")
+
+# Parse 'Timestamp' column if needed
+if 'Timestamp' in df.columns:
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+    print("\nExtracted Time Features:")
+    df['Hour'] = df['Timestamp'].dt.hour
+    df['Day'] = df['Timestamp'].dt.day
+    df['Month'] = df['Timestamp'].dt.month
+    print(df[['Hour', 'Day', 'Month']].head())
+
+# (Optional) Correlation matrix for numeric fields
+numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
+plt.figure(figsize=(12,10))
+sns.heatmap(df[numeric_cols].corr(), cmap='coolwarm', annot=False)
+plt.title('Correlation Matrix')
+plt.show()
