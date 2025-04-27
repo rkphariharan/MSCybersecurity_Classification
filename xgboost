@@ -1,0 +1,67 @@
+import pandas as pd
+import numpy as np
+import pickle
+from xgboost import XGBClassifier
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.metrics import classification_report, f1_score
+
+# 1. Load the preprocessed train_split dataset
+train_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\train_split.csv"
+val_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\val_split.csv"
+
+train_df = pd.read_csv(train_path)
+val_df = pd.read_csv(val_path)
+
+X_train = train_df.drop('IncidentGrade', axis=1)
+y_train = train_df['IncidentGrade']
+
+X_val = val_df.drop('IncidentGrade', axis=1)
+y_val = val_df['IncidentGrade']
+
+# 2. Set up the XGBoost model
+xgb = XGBClassifier(
+    objective='multi:softmax',
+    num_class=4,
+    use_label_encoder=False,
+    eval_metric='mlogloss',
+    random_state=42,
+    n_jobs=-1  # internally use all cores for training (safe because tuning is sequential)
+)
+
+# 3. Light RandomizedSearchCV Parameters
+xgb_params = {
+    'n_estimators': [100, 200, 300],
+    'max_depth': [4, 6, 8],
+    'learning_rate': [0.05, 0.1, 0.2],
+    'subsample': [0.7, 0.8, 1.0],
+    'colsample_bytree': [0.7, 0.8, 1.0]
+}
+
+xgb_search = RandomizedSearchCV(
+    xgb,
+    param_distributions=xgb_params,
+    n_iter=5,         # ✅ Light tuning
+    cv=3,             # ✅ 3-Fold CV
+    verbose=2,
+    random_state=42,
+    n_jobs=1          # ✅ Only 1 core
+)
+
+# 4. Train (fit)
+print("🚀 Training XGBoost Model (safe version)...")
+xgb_search.fit(X_train, y_train)
+
+# 5. Evaluate
+xgb_best = xgb_search.best_estimator_
+y_pred = xgb_best.predict(X_val)
+
+print("\n📋 XGBoost Evaluation Report:")
+print(classification_report(y_val, y_pred))
+print("Macro F1 Score:", f1_score(y_val, y_pred, average='macro'))
+
+# 6. Save the best model
+model_save_path = r"C:\Users\rkpha\Desktop\MS Cybersecurity\final\best_xgb_model.pkl"
+with open(model_save_path, 'wb') as f:
+    pickle.dump(xgb_best, f)
+
+print(f"\n✅ Best XGBoost model saved successfully at: {model_save_path}")
